@@ -7,4 +7,4 @@
 
 import Foundation
 
-protocol CharacterDetailsViewProtocol: class, BaseViewType { }
+protocol CharacterDetailsViewProtocol: AnyObject, BaseViewType { }

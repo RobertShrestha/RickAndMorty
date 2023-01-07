@@ -8,15 +8,9 @@
 import Foundation
 
 protocol CharacterDetailsServiceProtocol {
-
-    /// SAMPLE FUNCTION -* Please rename this function to your real function
-    ///
-    /// - Parameters:
-    ///   - success: -- success closure response, add your Model on this closure.
-    ///                 example: success(_ data: YourModelName) -> ()
-    ///   - failure: -- failure closure response, add your Model on this closure.  
-    ///                 example: success(_ data: APIError) -> ()
-    func removeThisFuncName(success: @escaping(_ data: CharacterDetailsModel) -> Void,
-                            failure: @escaping() -> Void)
-
+    var client: WebServices { get set }
+    func getCharacter<T:Codable>(resource: Resource<T>) async throws -> T 
+    func getCharacterBookmark(model: CharacterModel) -> Bool
+    func addCharacter(model: CharacterModel)
+    func removeCharacter(model: CharacterModel)
 }

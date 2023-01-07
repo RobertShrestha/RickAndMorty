@@ -6,61 +6,81 @@
 //
 
 import Foundation
-
-class CharacterDetailsViewModel {
+import RxSwift
+import RxCocoa
+class CharacterDetailsViewModel: CharacterDetailsViewModelProtocol {
     // MARK: - Variables declaration
     weak var viewType: CharacterDetailsViewProtocol?
 
     private let service: CharacterDetailsServiceProtocol
 
-    private var model: [CharacterDetailsModel] = [CharacterDetailsModel]() {
-        didSet {
-            self.count = self.model.count
-        }
-    }
-
-    /// Count your data in model
-    var count: Int = 0
-
-    // MARK: - Network checking
-
     /// Define networkStatus for check network connection
     var networkStatus = Reach().connectionStatus()
+    var characterId: Int
+    var character = BehaviorRelay<CharacterModel?>(value: nil)
+    var disposeBag = DisposeBag()
+    var bookMarkedButtonTapped = PublishSubject<Void>()
+    var isBookmarked = BehaviorRelay<Bool>(value: false)
 
-    /// Define boolean for internet status, call when network disconnected
-    var isDisconnected: Bool = false {
-        didSet {
-            self.viewType?.alert(message: Constants.noInternetConnection)
-        }
-    }
     // MARK: - Initialization Method
-    init(withCharacterDetails serviceProtocol: CharacterDetailsServiceProtocol = CharacterDetailsService() ) {
+    init(withCharacterDetails serviceProtocol: CharacterDetailsServiceProtocol, characterId: Int ) {
         self.service = serviceProtocol
-
+        self.characterId = characterId
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(self.networkStatusChanged(_:)),
                                                name: NSNotification
                                                 .Name(rawValue: ReachabilityStatusChangedNotification),
                                                object: nil)
         Reach().monitorReachabilityChanges()
+        Task {
+            await self.getCharacter()
+        }
+        binding()
+    }
 
+    func binding() {
+        self.bookMarkedButtonTapped.asObserver().subscribe(onNext: {
+            self.bookMarkProduct()
+            var value = self.isBookmarked.value
+            value.toggle()
+            self.isBookmarked.accept(value)
+        }).disposed(by: disposeBag)
+    }
+
+    func getBookmarkInfo() {
+        guard let model = self.character.value else { return }
+        let bookMarked = self.service.getCharacterBookmark(model: model)
+        self.isBookmarked.accept(bookMarked)
+    }
+    func bookMarkProduct() {
+        guard let model = self.character.value else { return }
+        if self.isBookmarked.value {
+            self.service.removeCharacter(model: model)
+        } else {
+            self.service.addCharacter(model: model)
+        }
     }
 
     // MARK: Internet monitor status
     @objc func networkStatusChanged(_ notification: Notification) {
         self.networkStatus = Reach().connectionStatus()
     }
-
-    // MARK: - Example Func
-    func exampleBind() {
-        switch networkStatus {
-        case .offline:
-            self.isDisconnected = true
-        case .online:
-            // call your service here
-        default:
-            break
+    func getCharacter() async {
+        guard let url = URLBuilder()
+                .setPath(paths: .character)
+                .setIdPath(id: "\(characterId)")
+                .build() else { return }
+        var resource = Resource<CharacterModel>(url: url)
+        resource.httpMethod = HTTPMethod.get
+        do {
+            let characterModel = try await self.service.getCharacter(resource: resource)
+            self.character.accept(characterModel)
+            getBookmarkInfo()
+        } catch let error {
+            print(error)
+            self.viewType?.alert(message: error.localizedDescription)
         }
+
     }
 }
 

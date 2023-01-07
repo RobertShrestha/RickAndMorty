@@ -91,70 +91,6 @@ extension UICollectionView {
                                                      for: indexPath) as! T
     }
 }
-// MARK: - Handle Empty TableView
-extension UITableView {
-    func setEmptySearchViewContactView(title: String,
-                                       message: String) {
-        let emptyView = UIView(frame: CGRect(x: self.center.x,
-                                             y: self.center.y,
-                                             width: self.bounds.size.width,
-                                             height: self.bounds.size.height))
-        let titleLabel = HeaderLabel()
-        let messageLabel = HeaderLabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = title
-        messageLabel.text = message
-        emptyView.addSubview(titleLabel)
-        emptyView.addSubview(messageLabel)
-        messageLabel.isHidden = true
-        messageLabel.centerXAnchor.constraint(equalTo: emptyView.centerXAnchor).isActive = true
-        messageLabel.centerYAnchor.constraint(equalTo: emptyView.centerYAnchor).isActive = true
-        titleLabel.centerXAnchor.constraint(equalTo: messageLabel.centerXAnchor).isActive = true
-        titleLabel.centerYAnchor.constraint(equalTo: emptyView.centerYAnchor, constant: 20).isActive = true
-        self.backgroundView = emptyView
-        self.separatorStyle = .none
-    }
-
-    func restore() {
-        DispatchQueue.main.async {
-            self.backgroundView = nil
-            self.separatorStyle = .singleLine
-        }
-    }
-}
-extension UICollectionView {
-    func setEmptyView(title: String, message: String) {
-        let emptyView = UIView(frame: CGRect(x: self.center.x,
-                                             y: self.center.y,
-                                             width: self.bounds.size.width,
-                                             height: self.bounds.size.height))
-        let titleLabel = UILabel()
-        let messageLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.textColor = UIColor.black
-        titleLabel.font = UIFont(name: "HelveticaNeue-Bold", size: 18)
-        messageLabel.textColor = UIColor.lightGray
-        messageLabel.font = UIFont(name: "HelveticaNeue-Regular", size: 17)
-        emptyView.addSubview(titleLabel)
-        emptyView.addSubview(messageLabel)
-        titleLabel.centerYAnchor.constraint(equalTo: emptyView.centerYAnchor).isActive = true
-        titleLabel.centerXAnchor.constraint(equalTo: emptyView.centerXAnchor).isActive = true
-        messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20).isActive = true
-        messageLabel.leftAnchor.constraint(equalTo: emptyView.leftAnchor, constant: 20).isActive = true
-        messageLabel.rightAnchor.constraint(equalTo: emptyView.rightAnchor, constant: -20).isActive = true
-        titleLabel.text = title
-        messageLabel.text = message
-        messageLabel.numberOfLines = 0
-        messageLabel.textAlignment = .center
-        // The only tricky part is here:
-        self.backgroundView = emptyView
-    }
-    func restore() {
-        self.backgroundView = nil
-    }
-}
 extension UITableView {
   func hasRowAtIndexPath(indexPath: IndexPath) -> Bool {
     return indexPath.section < self.numberOfSections && indexPath.row < self.numberOfRows(inSection: indexPath.section)
@@ -166,4 +102,35 @@ extension UITableView {
       self.scrollToRow(at: indexPath, at: .top, animated: animated)
     }
   }
+}
+extension Data {
+    var hexString: String {
+        let hexString = map { String(format: "%02.2hhx", $0) }.joined()
+        return hexString
+    }
+    func decoded<T: Decodable>() -> T {
+        do {
+            let decode =  try JSONDecoder().decode(T.self, from: self)
+            print(decode)
+        } catch let error {
+            print(error)
+        }
+        guard let decode =  try? JSONDecoder().decode(T.self, from: self) else {
+            fatalError()
+        }
+        return decode
+    }
+}
+extension Encodable {
+    func toData() -> Data? {
+        let encoder = JSONEncoder()
+        do {
+            let encoded = try encoder.encode(self)
+            return encoded
+        } catch let error {
+            print(error)
+            return nil
+        }
+
+    }
 }
